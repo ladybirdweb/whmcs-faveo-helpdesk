@@ -13,7 +13,6 @@ function favehelpdesk_installLicense()
 
 function faveohelpdesk_verifyLicense()
 {
-  return ['notification_case' => 'notification_license_ok'];
   require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
   require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
   $license = aplVerifyLicense();
