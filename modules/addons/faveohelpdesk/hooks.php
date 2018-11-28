@@ -1,4 +1,31 @@
 <?php
+function favehelpdesk_installLicense()
+{
+  require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
+  require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
+
+  $systemURL = WHMCS\Database\Capsule::table('tblconfiguration')->where('setting', 'SystemURL')->value('value');
+  $systemURL = trim($systemURL, '/') . '/modules/addons/faveohelpdesk';
+  $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
+  $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']));
+  return $license;
+}
+
+function faveohelpdesk_verifyLicense()
+{
+  return ['notification_case' => 'notification_license_ok'];
+  require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
+  require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
+  $license = aplVerifyLicense();
+  if (
+    $license['notification_case'] == 'notification_license_corrupted'
+    && $license['notification_text'] == 'License is not installed yet or corrupted.'
+  ) {
+    $license = favehelpdesk_installLicense();
+  }
+  return $license;
+}
+
 function faveohelpdesk_urls()
 {
   return [
@@ -27,6 +54,9 @@ function faveohelpdesk_isLoggedIn()
 }
 
 add_hook('AdminAreaPage', 100, function($vars) {
+  $license = faveohelpdesk_verifyLicense();
+  if ($license['notification_case'] != 'notification_license_ok') return [];
+
   $urls = faveohelpdesk_urls();
 
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
@@ -122,6 +152,9 @@ add_hook('AdminAreaPage', 100, function($vars) {
 
 add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryNavbar)
 {
+  $license = faveohelpdesk_verifyLicense();
+  if ($license['notification_case'] != 'notification_license_ok') return [];
+
   $urls = faveohelpdesk_urls();
 
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
@@ -254,6 +287,9 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
 });
 
 add_hook('ClientAreaSecondarySidebar', 100, function(WHMCS\View\Menu\Item $secondarySidebar) {
+  $license = faveohelpdesk_verifyLicense();
+  if ($license['notification_case'] != 'notification_license_ok') return [];
+
   $urls = faveohelpdesk_urls();
 
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
@@ -262,34 +298,23 @@ add_hook('ClientAreaSecondarySidebar', 100, function(WHMCS\View\Menu\Item $secon
   if ($settings['faveoSystemURL']) {
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['openTicket']) {
       $support = $secondarySidebar->getChild("Support");
-      if (!$support) {
-        $support = $secondarySidebar->addChild(
-          'Support',
-          [
-            'name' => 'Support',
-            'label' => Lang::trans('navsupport'),
-            'order' => 1,
-            'icon' => 'far fa-life-ring',
-          ]
-        );
+      if ($support) {
+        $openTicket = $support->getChild("Open Ticket");
+        if (!$openTicket) {
+          $openTicket = $support->addChild(
+            'Open Ticket',
+            [
+              'name' => 'Open Ticket',
+              'label' => Lang::trans('navopenticket'),
+              'order' => 99,
+              'icon' => 'fas fa-comments fa-fw',
+            ]
+          );
+        }
+
+        $openTicket->setAttribute('target', '_blank')
+          ->setUri($settings['faveoSystemURL'] . $urls['client']['openTicket']);
       }
-
-      $openTicket = $support->getChild("Open Ticket");
-      if (!$openTicket) {
-        $openTicket = $support->addChild(
-          'Open Ticket',
-          [
-            'name' => 'Open Ticket',
-            'label' => Lang::trans('navopenticket'),
-            'order' => 99,
-            'icon' => 'fas fa-comments fa-fw',
-          ]
-        );
-      }
-
-      $openTicket->setAttribute('target', '_blank')
-        ->setUri($settings['faveoSystemURL'] . $urls['client']['openTicket']);
-
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
       if ($secondarySidebar->getChild("Support") && $secondarySidebar->getChild("Support")->getChild('Open Ticket')) {
         $secondarySidebar->getChild("Support")->removeChild('Open Ticket');
@@ -298,33 +323,23 @@ add_hook('ClientAreaSecondarySidebar', 100, function(WHMCS\View\Menu\Item $secon
 
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['viewTicket']) {
       $support = $secondarySidebar->getChild("Support");
-      if (!$support) {
-        $support = $secondarySidebar->addChild(
-          'Support',
-          [
-            'name' => 'Support',
-            'label' => Lang::trans('navsupport'),
-            'order' => 1,
-            'icon' => 'far fa-life-ring',
-          ]
-        );
-      }
+      if ($support) {
+        $tickets = $support->getChild("Support Tickets");
+        if (!$tickets) {
+          $tickets = $support->addChild(
+            'Support Tickets',
+            [
+              'name' => 'Support Tickets',
+              'label' => Lang::trans('clientareanavsupporttickets'),
+              'order' => 1,
+              'icon' => 'fas fa-ticket-alt fa-fw',
+            ]
+          );
+        }
 
-      $tickets = $support->getChild("Support Tickets");
-      if (!$tickets) {
-        $tickets = $support->addChild(
-          'Support Tickets',
-          [
-            'name' => 'Support Tickets',
-            'label' => Lang::trans('clientareanavsupporttickets'),
-            'order' => 1,
-            'icon' => 'fas fa-ticket-alt fa-fw',
-          ]
-        );
+        $tickets->setAttribute('target', '_blank')
+          ->setUri($settings['faveoSystemURL'] . $urls['client']['viewTicket']);
       }
-
-      $tickets->setAttribute('target', '_blank')
-        ->setUri($settings['faveoSystemURL'] . $urls['client']['viewTicket']);
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
       if ($secondarySidebar->getChild("Support") && $secondarySidebar->getChild("Support")->getChild('Support Tickets')) {
         $secondarySidebar->getChild("Support")->removeChild('Support Tickets');
@@ -333,33 +348,23 @@ add_hook('ClientAreaSecondarySidebar', 100, function(WHMCS\View\Menu\Item $secon
 
     if ($settings['disableWHMCSKB'] == 'on' && $urls['client']['knowledgebase']) {
       $support = $secondarySidebar->getChild("Support");
-      if (!$support) {
-        $support = $secondarySidebar->addChild(
-          'Support',
-          [
-            'name' => 'Support',
-            'label' => Lang::trans('navsupport'),
-            'order' => 1,
-            'icon' => 'far fa-life-ring',
-          ]
-        );
-      }
+      if ($support) {
+        $knowledgebase = $support->getChild("Knowledgebase");
+        if (!$knowledgebase) {
+          $knowledgebase = $support->addChild(
+            'Knowledgebase',
+            [
+              'name' => 'Knowledgebase',
+              'label' => Lang::trans('knowledgebasetitle'),
+              'order' => 3,
+              'icon' => 'fas fa-info-circle fa-fw',
+            ]
+          );
+        }
 
-      $knowledgebase = $support->getChild("Knowledgebase");
-      if (!$knowledgebase) {
-        $knowledgebase = $support->addChild(
-          'Knowledgebase',
-          [
-            'name' => 'Knowledgebase',
-            'label' => Lang::trans('knowledgebasetitle'),
-            'order' => 3,
-            'icon' => 'fas fa-info-circle fa-fw',
-          ]
-        );
+        $knowledgebase->setAttribute('target', '_blank')
+          ->setUri($settings['faveoSystemURL'] . $urls['client']['knowledgebase']);
       }
-
-      $knowledgebase->setAttribute('target', '_blank')
-        ->setUri($settings['faveoSystemURL'] . $urls['client']['knowledgebase']);
     } elseif ($settings['disableWHMCSKB'] == 'on') {
       if ($secondarySidebar->getChild("Support") && $secondarySidebar->getChild("Support")->getChild('Knowledgebase')) {
         $secondarySidebar->getChild("Support")->removeChild('Knowledgebase');
@@ -368,37 +373,55 @@ add_hook('ClientAreaSecondarySidebar', 100, function(WHMCS\View\Menu\Item $secon
 
     if ($settings['disableWHMCSAnnouncements'] == 'on' && $urls['client']['announcement']) {
       $support = $secondarySidebar->getChild("Support");
-      if (!$support) {
-        $support = $secondarySidebar->addChild(
-          'Support',
-          [
-            'name' => 'Support',
-            'label' => Lang::trans('navsupport'),
-            'order' => 1,
-            'icon' => 'far fa-life-ring',
-          ]
-        );
-      }
+      if ($support) {
+        $announcement = $support->getChild("Announcements");
+        if (!$announcement) {
+          $announcement = $support->addChild(
+            'Announcements',
+            [
+              'name' => 'Announcements',
+              'label' => Lang::trans('announcementstitle'),
+              'order' => 2,
+              'icon' => 'fas fa-list fa-fwfw',
+            ]
+          );
+        }
 
-      $announcement = $support->getChild("Announcements");
-      if (!$announcement) {
-        $announcement = $support->addChild(
-          'Announcements',
-          [
-            'name' => 'Announcements',
-            'label' => Lang::trans('announcementstitle'),
-            'order' => 2,
-            'icon' => 'fas fa-list fa-fwfw',
-          ]
-        );
+        $announcement->setAttribute('target', '_blank')
+          ->setUri($settings['faveoSystemURL'] . $urls['client']['announcement']);
       }
-
-      $announcement->setAttribute('target', '_blank')
-        ->setUri($settings['faveoSystemURL'] . $urls['client']['announcement']);
     } elseif ($settings['disableWHMCSAnnouncements'] == 'on')  {
       if ($secondarySidebar->getChild("Support") && $secondarySidebar->getChild("Support")->getChild('Announcements')) {
         $secondarySidebar->getChild("Support")->removeChild('Announcements');
       }
     }
   }
+});
+
+add_hook('ClientAreaHeadOutput', 1, function($vars) {
+  $license = faveohelpdesk_verifyLicense();
+  if ($license['notification_case'] != 'notification_license_ok') return [];
+
+  $urls = faveohelpdesk_urls();
+
+  $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
+  $settings['faveoSystemURL'] = trim($settings['faveoSystemURL'], '/') . '/';
+
+  if ($settings['faveoSystemURL']) {
+    if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['openTicket']) {
+      return "
+        <script type='text/javascript'>
+          $(document).ready(function () {
+            $('a[href\$=\"submitticket.php\"]')
+              .attr('href', '{$settings['faveoSystemURL']}{$urls['client']['openTicket']}')
+              .attr('target', '_blank');
+          });
+        </script>
+      ";
+    }
+  }
+});
+
+add_hook('AfterCronJob', 100, function() {
+  faveohelpdesk_verifyLicense(null, 1);
 });

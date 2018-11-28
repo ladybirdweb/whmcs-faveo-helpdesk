@@ -13,6 +13,12 @@ function faveohelpdesk_config()
     'language' => 'english',
     'version' => '1.0',
     'fields' => [
+      'faveoLicense' => [
+        'FriendlyName' => 'Faveo License Key',
+        'Type' => 'text',
+        'Size' => '65',
+        'Default' => '',
+      ],
       'disableWHMCSTicketing' => [
         'FriendlyName' => 'Disable WHMCS Ticketing',
         'Type' => 'yesno'
@@ -36,7 +42,7 @@ function faveohelpdesk_config()
   ];
 }
 
-function faveohelpdesk_activate()
+function faveohelpdesk_activate($vars)
 {
   if (file_exists(ROOTDIR . '/modules/widgets/Support.php')) {
     rename(ROOTDIR . '/modules/widgets/Support.php', ROOTDIR . '/modules/widgets/Support.php.bak');
