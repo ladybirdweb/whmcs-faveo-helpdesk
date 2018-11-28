@@ -15,16 +15,18 @@ function faveohelpdesk_urls()
     'client' => [
       'viewTicket' => 'mytickets',
       'openTicket' => 'create-ticket',
-      'knowledgebase' => 'category-list',
+      'knowledgebase' => 'knowledgebase',
       'announcement' => '',
     ],
   ];
 }
 
-add_hook('AdminAreaPage', 100, function($vars) {
-  // file_put_contents(__DIR__.'/AdminAreaPage_'.time(), json_encode($_SERVER));
-  // file_put_contents(__DIR__.'/AdminAreaPageDefinedVars_'.time(), json_encode(get_defined_vars()));
+function faveohelpdesk_isLoggedIn()
+{
+  return (WHMCS\Session::get('uid') && WHMCS\Session::get('upw'));
+}
 
+add_hook('AdminAreaPage', 100, function($vars) {
   $urls = faveohelpdesk_urls();
 
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
@@ -32,77 +34,86 @@ add_hook('AdminAreaPage', 100, function($vars) {
 
   if ($settings['faveoSystemURL']) {
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['admin']['openTicket']) {
-      $jquerycode .= "$('a[href$=\"supporttickets.php?action=open\"]')
+      $jquerycode .= "\$('a[href\$=\"supporttickets.php?action=open\"]')
                         .attr('target', '_blank')
                         .attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['openTicket']}');";
-      $jquerycode .= "$('a#Menu-Setup-Support').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Setup-Support').parent('li').remove();";
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
-      $jquerycode .= "$('a[href$=\"supporttickets.php?action=open\"]').parent('li').remove();";
-      $jquerycode .= "$('a#Menu-Setup-Support').parent('li').remove();";
+      $jquerycode .= "\$('a[href\$=\"supporttickets.php?action=open\"]').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Setup-Support').parent('li').remove();";
     }
 
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['admin']['viewTicket']) {
-      $jquerycode .= "$('a[href$=\"supporttickets.php\"]')
+      $jquerycode .= "\$('a[href\$=\"supporttickets.php\"]')
                         .attr('target', '_blank')
                         .attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['viewTicket']}')
                         .parent('li')
                         .removeClass('expand')
                         .children('ul').remove();";
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
-      $jquerycode .= "$('a[href$=\"supporttickets.php\"]')
+      $jquerycode .= "\$('a[href\$=\"supporttickets.php\"]')
                         .parent('li')
                         .removeClass('expand')
                         .children('ul').remove();";
     }
 
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['admin']['predefiendReplies']) {
-      $jquerycode .= "$('a[href$=\"supportticketpredefinedreplies.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['predefiendReplies']}');";
+      $jquerycode .= "\$('a[href\$=\"supportticketpredefinedreplies.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['predefiendReplies']}');";
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
-      $jquerycode .= "$('a[href$=\"supportticketpredefinedreplies.php\"]').parent('li').remove();";
+      $jquerycode .= "\$('a[href\$=\"supportticketpredefinedreplies.php\"]').parent('li').remove();";
     }
 
     if ($settings['disableWHMCSKB'] == 'on' && $urls['admin']['knowledgebase']) {
-      $jquerycode .= "$('a[href$=\"supportkb.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['knowledgebase']}');";
+      $jquerycode .= "\$('a[href\$=\"supportkb.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['knowledgebase']}');";
     } elseif ($settings['disableWHMCSKB'] == 'on') {
-      $jquerycode .= "$('a[href$=\"supportkb.php\"]').parent('li').remove();";
+      $jquerycode .= "\$('a[href\$=\"supportkb.php\"]').parent('li').remove();";
     }
 
     if ($settings['disableWHMCSAnnouncements'] == 'on' && $urls['admin']['announcement']) {
-      $jquerycode .= "$('a[href$=\"supportannouncements.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['announcement']}');";
+      $jquerycode .= "\$('a[href\$=\"supportannouncements.php\"]').attr('target', '_blank').attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['announcement']}');";
     } elseif ($settings['disableWHMCSAnnouncements'] == 'on')  {
-      $jquerycode .= "$('a[href$=\"supportannouncements.php\"]').parent('li').remove();";
+      $jquerycode .= "\$('a[href\$=\"supportannouncements.php\"]').parent('li').remove();";
     }
   }
 
   //URL Check
   if (strpos($_SERVER['SCRIPT_NAME'], 'configaddonmods.php') !== FALSE) {
     $jquerycode .= "
-function installationCheck()
-{
-  let url = \$(this).val().trim('/') + '/';
-  console.log('url: ', url);
-  $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').parent().html(
-    $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]')
-      .parent().html()
-      .replace('✓', '')
-      .replace('x', '')
-  );
-  $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').val(url);
-  $.get('/modules/addons/faveohelpdesk/search.php', {url: url}, function (data) {
-    console.log('data: ', data.result);
-    if (data.result == 'success') {
-      $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').after('✓');
-      $('input[name=\"msave_faveohelpdesk\"]').prop('disabled', 0);
-    } else {
-      $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').after('x');
-      $('input[name=\"msave_faveohelpdesk\"]').prop('disabled', 1);
-    }
-    $('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').on('change', installationCheck);
-  }, 'json');
-  return true;
-}
+      function installationCheck()
+      {
+        let url = \$(this).val().trim('/') + '/';
+        \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').parent().html(
+          \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]')
+            .parent().html()
+            .replace('✓', '')
+            .replace('x', '')
+        );
+        \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').val(url);
+        \$.get('/modules/addons/faveohelpdesk/search.php', {url: url}, function (data) {
+          if (data.result == 'success') {
+            \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').after('✓');
+            \$('input[name=\"msave_faveohelpdesk\"]').prop('disabled', 0);
+          } else {
+            \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').after('x');
+            \$('input[name=\"msave_faveohelpdesk\"]').prop('disabled', 1);
+          }
+          \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').on('change', installationCheck);
+        }, 'json');
+        return true;
+      }
 
-$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').on('change', installationCheck);";
+      \$('input[name=\"fields[faveohelpdesk][faveoSystemURL]\"]').on('change', installationCheck);";
+  }
+
+  if ($settings['disableWHMCSTicketing'] == 'on' && strpos($_SERVER['SCRIPT_NAME'], 'index.php') !== FALSE) {
+    $jquerycode .= "
+      if (\$('div.status-badge-pink')) {
+        \$('div.status-badge-pink').parent().remove();
+      }
+      if (\$('div.stats').find('a:last')) {
+        \$('div.stats').find('a:last').remove()
+      }
+    ";
   }
 
   return ['jquerycode' => $vars['jquerycode'] . $jquerycode];
@@ -117,7 +128,7 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
   $settings['faveoSystemURL'] = trim($settings['faveoSystemURL'], '/') . '/';
 
   if ($settings['faveoSystemURL']) {
-    if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['openTicket']) {
+    if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['openTicket'] && faveohelpdesk_isLoggedIn()) {
       $openTicket = $primaryNavbar->getChild("Open Ticket");
       if (!$openTicket) {
         $openTicket = $primaryNavbar->addChild(
@@ -137,7 +148,7 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
       }
     }
 
-    if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['viewTicket']) {
+    if ($settings['disableWHMCSTicketing'] == 'on' && $urls['client']['viewTicket'] && faveohelpdesk_isLoggedIn()) {
       $support = $primaryNavbar->getChild("Support");
       if (!$support) {
         $support = $primaryNavbar->addChild(
@@ -171,7 +182,7 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
     }
 
     if ($settings['disableWHMCSKB'] == 'on' && $urls['client']['knowledgebase']) {
-      $support = $primaryNavbar->getChild("Support");
+      $support = faveohelpdesk_isLoggedIn() ? $primaryNavbar->getChild("Support") : $primaryNavbar;
       if (!$support) {
         $support = $primaryNavbar->addChild(
           'Support',
@@ -200,11 +211,13 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
     } elseif ($settings['disableWHMCSKB'] == 'on') {
       if ($primaryNavbar->getChild("Support") && $primaryNavbar->getChild("Support")->getChild('Knowledgebase')) {
         $primaryNavbar->getChild("Support")->removeChild('Knowledgebase');
+      } elseif ($primaryNavbar->getChild('Knowledgebase')) {
+        $primaryNavbar->removeChild('Knowledgebase');
       }
     }
 
     if ($settings['disableWHMCSAnnouncements'] == 'on' && $urls['client']['announcement']) {
-      $support = $primaryNavbar->getChild("Support");
+      $support = faveohelpdesk_isLoggedIn() ? $primaryNavbar->getChild("Support") : $primaryNavbar;
       if (!$support) {
         $support = $primaryNavbar->addChild(
           'Support',
@@ -233,6 +246,8 @@ add_hook('ClientAreaPrimaryNavbar', 100, function(WHMCS\View\Menu\Item $primaryN
     } elseif ($settings['disableWHMCSAnnouncements'] == 'on')  {
       if ($primaryNavbar->getChild("Support") && $primaryNavbar->getChild("Support")->getChild('Announcements')) {
         $primaryNavbar->getChild("Support")->removeChild('Announcements');
+      } elseif ($primaryNavbar->getChild('Announcements')) {
+        $primaryNavbar->removeChild('Announcements');
       }
     }
   }

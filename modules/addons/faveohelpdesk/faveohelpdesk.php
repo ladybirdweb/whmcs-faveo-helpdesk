@@ -35,3 +35,25 @@ function faveohelpdesk_config()
     ],
   ];
 }
+
+function faveohelpdesk_activate()
+{
+  if (file_exists(ROOTDIR . '/modules/widgets/Support.php')) {
+    rename(ROOTDIR . '/modules/widgets/Support.php', ROOTDIR . '/modules/widgets/Support.php.bak');
+  }
+
+  return [
+    'status' => 'success',
+  ];
+}
+
+function faveohelpdesk_deactivate()
+{
+  if (file_exists(ROOTDIR . '/modules/widgets/Support.php.bak')) {
+    rename(ROOTDIR . '/modules/widgets/Support.php.bak', ROOTDIR . '/modules/widgets/Support.php');
+  }
+
+  return [
+    'status' => 'success',
+  ];
+}
