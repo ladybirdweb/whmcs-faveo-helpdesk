@@ -41,7 +41,7 @@ function faveohelpdesk_config()
   ];
 }
 
-function faveohelpdesk_activate($vars)
+function faveohelpdesk_activate()
 {
   if (file_exists(ROOTDIR . '/modules/widgets/Support.php')) {
     rename(ROOTDIR . '/modules/widgets/Support.php', ROOTDIR . '/modules/widgets/Support.php.bak');
