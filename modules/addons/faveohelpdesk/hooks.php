@@ -1,4 +1,10 @@
 <?php
+function favehelpdesk_getMySQLiLink()
+{
+  global $db_host, $db_port, $db_username, $db_password, $db_name;
+  return mysqli_connect($db_host, $db_username, $db_password, $db_name, $db_port);
+}
+
 function favehelpdesk_installLicense()
 {
   require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
@@ -7,15 +13,15 @@ function favehelpdesk_installLicense()
   $systemURL = WHMCS\Database\Capsule::table('tblconfiguration')->where('setting', 'SystemURL')->value('value');
   $systemURL = trim($systemURL, '/') . '/modules/addons/faveohelpdesk';
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
-  $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']));
+  $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']), favehelpdesk_getMySQLiLink());
   return $license;
 }
 
-function faveohelpdesk_verifyLicense()
+function faveohelpdesk_verifyLicense($force = 0)
 {
   require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
   require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
-  $license = aplVerifyLicense();
+  $license = aplVerifyLicense(favehelpdesk_getMySQLiLink(), $force);
   if (
     $license['notification_case'] == 'notification_license_corrupted'
     && $license['notification_text'] == 'License is not installed yet or corrupted.'
@@ -422,5 +428,5 @@ add_hook('ClientAreaHeadOutput', 1, function($vars) {
 });
 
 add_hook('AfterCronJob', 100, function() {
-  faveohelpdesk_verifyLicense(null, 1);
+  faveohelpdesk_verifyLicense(1);
 });
