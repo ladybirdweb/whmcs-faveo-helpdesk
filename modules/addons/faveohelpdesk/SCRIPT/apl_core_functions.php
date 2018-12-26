@@ -358,7 +358,7 @@ function aplGenerateScriptSignature($ROOT_URL, $CLIENT_EMAIL, $LICENSE_CODE)
     $script_signature=null;
     $root_ips_array=gethostbynamel(aplGetRawDomain(APL_ROOT_URL));
 
-    if (!empty($ROOT_URL) && isset($CLIENT_EMAIL) && isset($LICENSE_CODE) && !empty($root_ips_array))
+    if (!empty($ROOT_URL) && (isset($CLIENT_EMAIL) || isset($LICENSE_CODE)) && !empty($root_ips_array))
         {
         $script_signature=hash("sha256", gmdate("Y-m-d").$ROOT_URL.$CLIENT_EMAIL.$LICENSE_CODE.APL_PRODUCT_ID.implode("", $root_ips_array));
         }
@@ -373,7 +373,7 @@ function aplVerifyServerSignature($notification_server_signature, $ROOT_URL, $CL
     $result=false;
     $root_ips_array=gethostbynamel(aplGetRawDomain(APL_ROOT_URL));
 
-    if (!empty($notification_server_signature) && !empty($ROOT_URL) && isset($CLIENT_EMAIL) && isset($LICENSE_CODE) && !empty($root_ips_array))
+    if (!empty($notification_server_signature) && !empty($ROOT_URL) && (isset($CLIENT_EMAIL) || isset($LICENSE_CODE)) && !empty($root_ips_array))
         {
         if (hash("sha256", implode("", $root_ips_array).APL_PRODUCT_ID.$LICENSE_CODE.$CLIENT_EMAIL.$ROOT_URL.gmdate("Y-m-d"))==$notification_server_signature)
             {

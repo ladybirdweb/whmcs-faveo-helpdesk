@@ -1,8 +1,22 @@
 <?php
+$faveo_mysqli = null;
+
 function favehelpdesk_getMySQLiLink()
 {
-  global $db_host, $db_port, $db_username, $db_password, $db_name;
-  return mysqli_connect($db_host, $db_username, $db_password, $db_name, $db_port);
+  global $db_host, $db_port, $db_username, $db_password, $db_name, $faveo_mysqli;
+
+  if ($faveo_mysqli) {
+    return $faveo_mysqli;
+  }
+
+  $faveo_mysqli = mysqli_connect($db_host, $db_username, $db_password, $db_name, $db_port ?: 3306);
+
+  if (mysqli_connect_errno())
+  {
+    die("Failed to connect to MySQL: " . mysqli_connect_error());
+  }
+
+  return $faveo_mysqli;
 }
 
 function favehelpdesk_installLicense()
@@ -14,11 +28,13 @@ function favehelpdesk_installLicense()
   $systemURL = trim($systemURL, '/') . '/modules/addons/faveohelpdesk';
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
   $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']), favehelpdesk_getMySQLiLink());
+
   return $license;
 }
 
 function faveohelpdesk_verifyLicense($force = 0)
 {
+  // return ['notification_case' => 'notification_license_ok'];
   require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
   require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
   $license = aplVerifyLicense(favehelpdesk_getMySQLiLink(), $force);
