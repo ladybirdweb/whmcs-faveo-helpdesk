@@ -8,7 +8,7 @@ function faveohelpdesk_config()
   return [
     'name' => 'Faveo Helpdesk',
     'description' => 'This module replaces the links to internal WHMCS ticketing system to Faveo Help Desk',
-    'author' => '<img src="/modules/addons/faveohelpdesk/logo.png" style="width: 75px;" alt="Faveo Help Desk"/>',
+    'author' => '<img src="../modules/addons/faveohelpdesk/logo.png" style="width: 75px;" alt="Faveo Help Desk"/>',
     'language' => 'english',
     'version' => '1.0',
     'fields' => [
