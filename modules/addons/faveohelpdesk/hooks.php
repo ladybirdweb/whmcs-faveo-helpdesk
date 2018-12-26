@@ -25,7 +25,7 @@ function favehelpdesk_installLicense()
   require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
 
   $systemURL = WHMCS\Database\Capsule::table('tblconfiguration')->where('setting', 'SystemURL')->value('value');
-  $systemURL = trim($systemURL, '/') . '/modules/addons/faveohelpdesk';
+  $systemURL = trim($systemURL, '/');
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
   $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']), favehelpdesk_getMySQLiLink());
 
