@@ -26,10 +26,19 @@ function favehelpdesk_installLicense()
 
   $systemURL = WHMCS\Database\Capsule::table('tblconfiguration')->where('setting', 'SystemURL')->value('value');
   $systemURL = trim($systemURL, '/');
+  $parts = parse_url($systemURL);
+  $systemURL = "{$parts['scheme']}://{$parts['host']}";
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
   $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']), favehelpdesk_getMySQLiLink());
 
   return $license;
+}
+
+function faveohelpdesk_uninstallLicense()
+{
+  require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
+  require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
+  aplUninstallLicense(favehelpdesk_getMySQLiLink());
 }
 
 function faveohelpdesk_verifyLicense($force = 0)
@@ -37,6 +46,13 @@ function faveohelpdesk_verifyLicense($force = 0)
   // return ['notification_case' => 'notification_license_ok'];
   require_once __DIR__ . '/SCRIPT/apl_core_configuration.php';
   require_once __DIR__ . '/SCRIPT/apl_core_functions.php';
+
+  $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
+  if (!$settings['faveoLicense']) {
+    faveohelpdesk_uninstallLicense();
+    return;
+  }
+
   $license = aplVerifyLicense(favehelpdesk_getMySQLiLink(), $force);
   if (
     $license['notification_case'] == 'notification_license_corrupted'
