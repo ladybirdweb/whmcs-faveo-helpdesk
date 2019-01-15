@@ -30,7 +30,6 @@ function favehelpdesk_installLicense()
   $systemURL = "{$parts['scheme']}://{$parts['host']}";
   $settings = WHMCS\Module\Addon\Setting::where('module', 'faveohelpdesk')->pluck('value', 'setting');
   $license = aplInstallLicense($systemURL, null, trim($settings['faveoLicense']), favehelpdesk_getMySQLiLink());
-
   return $license;
 }
 
@@ -105,9 +104,21 @@ add_hook('AdminAreaPage', 100, function($vars) {
                         .attr('target', '_blank')
                         .attr('href', '{$settings['faveoSystemURL']}{$urls['admin']['openTicket']}');";
       $jquerycode .= "\$('a#Menu-Setup-Support').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Support_Overview').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Support_Tickets').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Predefined_Replies').parent('li').remove();";
+      $jquerycode .= "\$('span.header:contains(\"Filter Tickets\")').remove();";
+      $jquerycode .= "\$('form[action=\"supporttickets.php\"]').remove();";
+      $jquerycode .= "\$('a:contains(\"Ticket(s) Awaiting Reply\")').remove();";
     } elseif ($settings['disableWHMCSTicketing'] == 'on') {
       $jquerycode .= "\$('a[href\$=\"supporttickets.php?action=open\"]').parent('li').remove();";
       $jquerycode .= "\$('a#Menu-Setup-Support').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Support_Overview').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Support_Tickets').parent('li').remove();";
+      $jquerycode .= "\$('a#Menu-Support-Predefined_Replies').parent('li').remove();";
+      $jquerycode .= "\$('span.header:contains(\"Filter Tickets\")').remove();";
+      $jquerycode .= "\$('form[action=\"supporttickets.php\"]').remove();";
+      $jquerycode .= "\$('a:contains(\"Ticket(s) Awaiting Reply\")').remove();";
     }
 
     if ($settings['disableWHMCSTicketing'] == 'on' && $urls['admin']['viewTicket']) {
