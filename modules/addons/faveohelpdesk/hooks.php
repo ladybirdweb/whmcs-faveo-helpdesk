@@ -52,6 +52,14 @@ function faveohelpdesk_verifyLicense($force = 0)
     return;
   }
 
+  if ($settings['faveoLicense'] && WHMCS\Database\Capsule::schema()->hasTable('faveo_license')) {
+    $verifiedLicense = WHMCS\Database\Capsule::table('faveo_license')->where('SETTING_ID', 1)->value('LICENSE_CODE');
+    if ($settings['faveoLicense'] != $verifiedLicense) {
+      $force = 1;
+      faveohelpdesk_uninstallLicense();
+    }
+  }
+
   $license = aplVerifyLicense(favehelpdesk_getMySQLiLink(), $force);
   if (
     $license['notification_case'] == 'notification_license_corrupted'
